@@ -822,11 +822,6 @@ type RecurringJob struct {
 	SleepAfterEachRunSeconds int     `json:"sleep_after_each_run_seconds"`
 }
 
-// ReportPlaytimeRequest defines model for ReportPlaytimeRequest.
-type ReportPlaytimeRequest struct {
-	ActualPlaytime int `json:"actual_playtime"`
-}
-
 // Score defines model for Score.
 type Score struct {
 	Finished  bool `json:"finished"`
@@ -1125,9 +1120,6 @@ type CreateScoringPresetJSONRequestBody = ScoringPresetCreate
 // CreateSignupJSONRequestBody defines body for CreateSignup for application/json ContentType.
 type CreateSignupJSONRequestBody = SignupCreate
 
-// ReportPlaytimeJSONRequestBody defines body for ReportPlaytime for application/json ContentType.
-type ReportPlaytimeJSONRequestBody = ReportPlaytimeRequest
-
 // SubmitBountyJSONRequestBody defines body for SubmitBounty for application/json ContentType.
 type SubmitBountyJSONRequestBody = SubmissionCreate
 
@@ -1326,8 +1318,6 @@ type ClientInterface interface {
 
 	// ReportPlaytimeWithBody request with any body
 	ReportPlaytimeWithBody(ctx context.Context, eventId int, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
-
-	ReportPlaytime(ctx context.Context, eventId int, body ReportPlaytimeJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// DeleteSignup request
 	DeleteSignup(ctx context.Context, eventId int, userId int, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -1870,18 +1860,6 @@ func (c *Client) CreateSignup(ctx context.Context, eventId int, body CreateSignu
 
 func (c *Client) ReportPlaytimeWithBody(ctx context.Context, eventId int, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewReportPlaytimeRequestWithBody(c.Server, eventId, contentType, body)
-	if err != nil {
-		return nil, err
-	}
-	req = req.WithContext(ctx)
-	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
-		return nil, err
-	}
-	return c.Client.Do(req)
-}
-
-func (c *Client) ReportPlaytime(ctx context.Context, eventId int, body ReportPlaytimeJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewReportPlaytimeRequest(c.Server, eventId, body)
 	if err != nil {
 		return nil, err
 	}
@@ -3570,17 +3548,6 @@ func NewCreateSignupRequestWithBody(server string, eventId int, contentType stri
 	req.Header.Add("Content-Type", contentType)
 
 	return req, nil
-}
-
-// NewReportPlaytimeRequest calls the generic ReportPlaytime builder with application/json body
-func NewReportPlaytimeRequest(server string, eventId int, body ReportPlaytimeJSONRequestBody) (*http.Request, error) {
-	var bodyReader io.Reader
-	buf, err := json.Marshal(body)
-	if err != nil {
-		return nil, err
-	}
-	bodyReader = bytes.NewReader(buf)
-	return NewReportPlaytimeRequestWithBody(server, eventId, "application/json", bodyReader)
 }
 
 // NewReportPlaytimeRequestWithBody generates requests for ReportPlaytime with any type of body
@@ -5580,8 +5547,6 @@ type ClientWithResponsesInterface interface {
 	// ReportPlaytimeWithBodyWithResponse request with any body
 	ReportPlaytimeWithBodyWithResponse(ctx context.Context, eventId int, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*ReportPlaytimeResponse, error)
 
-	ReportPlaytimeWithResponse(ctx context.Context, eventId int, body ReportPlaytimeJSONRequestBody, reqEditors ...RequestEditorFn) (*ReportPlaytimeResponse, error)
-
 	// DeleteSignupWithResponse request
 	DeleteSignupWithResponse(ctx context.Context, eventId int, userId int, reqEditors ...RequestEditorFn) (*DeleteSignupResponse, error)
 
@@ -7562,23 +7527,6 @@ func (c *ClientWithResponses) CreateSignupWithResponse(ctx context.Context, even
 		return nil, err
 	}
 	return ParseCreateSignupResponse(rsp)
-}
-
-// ReportPlaytimeWithBodyWithResponse request with arbitrary body returning *ReportPlaytimeResponse
-func (c *ClientWithResponses) ReportPlaytimeWithBodyWithResponse(ctx context.Context, eventId int, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*ReportPlaytimeResponse, error) {
-	rsp, err := c.ReportPlaytimeWithBody(ctx, eventId, contentType, body, reqEditors...)
-	if err != nil {
-		return nil, err
-	}
-	return ParseReportPlaytimeResponse(rsp)
-}
-
-func (c *ClientWithResponses) ReportPlaytimeWithResponse(ctx context.Context, eventId int, body ReportPlaytimeJSONRequestBody, reqEditors ...RequestEditorFn) (*ReportPlaytimeResponse, error) {
-	rsp, err := c.ReportPlaytime(ctx, eventId, body, reqEditors...)
-	if err != nil {
-		return nil, err
-	}
-	return ParseReportPlaytimeResponse(rsp)
 }
 
 // DeleteSignupWithResponse request returning *DeleteSignupResponse
